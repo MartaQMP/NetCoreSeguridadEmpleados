@@ -31,7 +31,8 @@
              <td>@empleado.Salario</td>
              <td>@empleado.IdDepartamento</td>
              <td>
-                 <a asp-controller="Empleado" asp-action="Details" class="btn btn-outline-dark">Detalles</a>
+                 <a asp-controller="Empleado" asp-action="Details" asp-route-id="@empleado.IdEmpleado" class="btn btn-outline-dark">Detalles</a>
+                 <a asp-controller="Empleado" asp-action="Delete" asp-route-id="@empleado.IdEmpleado" class="btn btn-outline-dark">Eliminar</a>
              </td>
          </tr>   
         }

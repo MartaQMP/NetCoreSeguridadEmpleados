@@ -8,7 +8,19 @@
         }
     </style>
 }
-<h1>Empleados</h1>
+
+<h1>Compis</h1>
+<hr />
+@if(Context.User.IsInRole("PRESIDENTE") || Context.User.IsInRole("DIRECTOR"))
+{
+
+    <form method="post">
+        <label class="form-label">Incremento salarial:</label>
+        <input class="form-control" type="text" name="incremento" />
+        <br />
+        <button class="btn btn-outline-dark">Incrementar</button>
+    </form>
+}
 <hr />
 <table>
     <thead>

@@ -1,11 +1,23 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using NetCoreSeguridadEmpleados.Data;
+using NetCoreSeguridadEmpleados.Policies;
 using NetCoreSeguridadEmpleados.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// LAS POLITICAS SE AGREGAN CON AUTHORIZATION
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SOLOJEFES", policy => policy.RequireRole("PRESIDENTE", "DIRECTOR", "ANALISTA"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Admin"));
+    options.AddPolicy("SoloRicos", policy => policy.Requirements.Add( new OverSalarioRequirement()));
+    options.AddPolicy("Subordinados", policy => policy.Requirements.Add( new OverSubordinadosRequirement()));
+});
+
+
+
 builder.Services.AddTransient<RepositoryHospital>();
 string connection = builder.Configuration.GetConnectionString("Sql");
 builder.Services.AddDbContext<HospitalContext>(options => options.UseSqlServer(connection));
@@ -17,8 +29,14 @@ builder.Services.AddAuthentication(options =>
         options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     }
-).AddCookie();
-builder.Services.AddControllersWithViews(options => options.EnableEndpointRouting = false);
+).AddCookie(
+    CookieAuthenticationDefaults.AuthenticationScheme, config =>
+    {
+        config.AccessDeniedPath = "/Managed/ErrorAcceso";
+    }
+    );
+
+builder.Services.AddControllersWithViews(options => options.EnableEndpointRouting = false).AddSessionStateTempDataProvider();
 
 var app = builder.Build();
 
@@ -43,12 +61,5 @@ app.UseMvc(routes =>
         name: "default",
         template: "{controller=Empleado}/{action=Index}/{id?}");
 });
-//app.MapStaticAssets();
-
-/*app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Empleado}/{action=Index}/{id?}")
-    .WithStaticAssets();
-*/
 
 app.Run();
