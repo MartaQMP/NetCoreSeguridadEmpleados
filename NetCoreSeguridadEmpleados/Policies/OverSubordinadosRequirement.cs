@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Filters;
 using NetCoreSeguridadEmpleados.Models;
 using NetCoreSeguridadEmpleados.Repositories;
 using System.Security.Claims;
@@ -7,16 +8,22 @@ namespace NetCoreSeguridadEmpleados.Policies
 {
     public class OverSubordinadosRequirement: AuthorizationHandler<OverSalarioRequirement>, IAuthorizationRequirement
     {
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, OverSalarioRequirement requirement)
+        protected override async Task<Task> HandleRequirementAsync(AuthorizationHandlerContext context, OverSalarioRequirement requirement)
         {
-            var httpContext = context.Resource as DefaultHttpContext;
-            if(httpContext != null)
+            var filterContext = context.Resource as AuthorizationFilterContext;
+            var httpContext = filterContext.HttpContext;
+            RepositoryHospital repo = httpContext.RequestServices.GetService<RepositoryHospital>();
+
+            if (context.User.HasClaim(c => c.Type == ClaimTypes.NameIdentifier) == false)
             {
-                int id = int.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var repo = httpContext.RequestServices.GetRequiredService<RepositoryHospital>();
-                List<Empleado> data = await repo.GetSubordinados(id);
-                
-                if (data.Count() > 0)
+                context.Fail();
+            }
+            else
+            {
+                string idString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                int id = int.Parse(idString);
+                List<Empleado> subordinados = await repo.GetSubordinados(id);
+                if (subordinados.Count > 0)
                 {
                     context.Succeed(requirement);
                 }
@@ -25,10 +32,7 @@ namespace NetCoreSeguridadEmpleados.Policies
                     context.Fail();
                 }
             }
-            else
-            {
-                context.Fail();
-            }
+            return Task.CompletedTask;
         }
     }
 }
